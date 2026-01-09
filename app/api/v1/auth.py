@@ -9,7 +9,7 @@ from app.schemas.auth import (
     OTPResponse,
     VerifyOTPResponse,
 )
-from app.services.otp_service import create_otp, verify_otp
+from app.services.otp_service import create_otp, verify_otp, RateLimitError
 
 router = APIRouter()
 
@@ -22,6 +22,11 @@ def send_otp(request: PhoneRequest, db: Session = Depends(get_db)):
         return OTPResponse(
             message="OTP sent successfully",
             phone=request.phone
+        )
+    except RateLimitError as e:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=str(e)
         )
     except Exception as e:
         raise HTTPException(

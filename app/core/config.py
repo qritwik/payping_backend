@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     """Application settings"""
     
     # Database
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/payping"
+    DATABASE_URL: str
     
     # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"
@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     # OTP
     OTP_EXPIRY_MINUTES: int = 10
     OTP_LENGTH: int = 6
+    OTP_RATE_LIMIT_SECONDS: int = 60  # Minimum seconds between OTP requests for same phone
     
     # API
     API_V1_STR: str = "/api/v1"
