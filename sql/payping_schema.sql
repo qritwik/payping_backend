@@ -92,8 +92,11 @@ CREATE TABLE IF NOT EXISTS invoices (
   amount DECIMAL(10,2) NOT NULL,
   due_date DATE,
 
-  status VARCHAR(20) DEFAULT 'UNPAID' CHECK (status IN ('UNPAID', 'PAID', 'PARTIALLY_PAID')),
+  status VARCHAR(20) DEFAULT 'UNPAID'
+    CHECK (status IN ('UNPAID', 'PAID', 'PARTIALLY_PAID')),
+
   paid_at TIMESTAMP,
+  pause_reminder BOOLEAN DEFAULT FALSE,
 
   created_at TIMESTAMP DEFAULT NOW()
 );
@@ -105,20 +108,35 @@ CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
 -- ---------- WHATSAPP MESSAGES ----------
 CREATE TABLE IF NOT EXISTS whatsapp_messages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
   merchant_id UUID REFERENCES merchants(id) ON DELETE CASCADE,
   customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
   invoice_id UUID REFERENCES invoices(id) ON DELETE SET NULL,
 
-  direction TEXT CHECK (direction IN ('INBOUND', 'OUTBOUND')),
-  message_type TEXT CHECK (message_type IN ('invoice', 'followup', 'customer_message')),
+  direction TEXT NOT NULL
+    CHECK (direction IN ('INBOUND', 'OUTBOUND')),
+
+  message_type TEXT
+    CHECK (message_type IN ('invoice', 'followup', 'customer_message')),
+
+  status TEXT NOT NULL DEFAULT 'PENDING'
+    CHECK (status IN (
+      'PENDING',
+      'SENT',
+      'DELIVERED',
+      'READ',
+      'FAILED',
+      'RECEIVED'
+    )),
 
   message_text TEXT,
-  provider_message_id TEXT,
+  provider_message_id TEXT UNIQUE,
 
   detected_intent TEXT,
   llm_confidence NUMERIC(3,2),
 
-  created_at TIMESTAMP DEFAULT NOW()
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_merchant_id ON whatsapp_messages(merchant_id);
