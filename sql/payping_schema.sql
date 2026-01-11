@@ -93,10 +93,11 @@ CREATE TABLE IF NOT EXISTS invoices (
   due_date DATE,
 
   status VARCHAR(20) DEFAULT 'UNPAID'
-    CHECK (status IN ('UNPAID', 'PAID', 'PARTIALLY_PAID')),
+    CHECK (status IN ('UNPAID', 'PAID')),
 
   paid_at TIMESTAMP,
   pause_reminder BOOLEAN DEFAULT FALSE,
+  deleted_at TIMESTAMP,
 
   created_at TIMESTAMP DEFAULT NOW()
 );
