@@ -19,6 +19,20 @@ class MerchantCreate(BaseModel):
     upi_qr_s3_url: Optional[str] = None
 
 
+class MerchantUpdate(BaseModel):
+    business_name: Optional[str] = Field(None, max_length=150)
+    business_type: Optional[str] = Field(None, max_length=100)
+    business_address: Optional[str] = None
+    business_city: Optional[str] = Field(None, max_length=50)
+    business_country: Optional[str] = Field(None, max_length=50)
+    business_zipcode: Optional[str] = Field(None, max_length=20)
+    owner_name: Optional[str] = Field(None, max_length=100)
+    email: Optional[EmailStr] = None
+    company_logo_s3_url: Optional[str] = None
+    upi_id: Optional[str] = Field(None, max_length=100)
+    upi_qr_s3_url: Optional[str] = None
+
+
 class MerchantResponse(BaseModel):
     id: UUID
     business_name: str

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import get_current_merchant, create_access_token
 from app.models.merchant import Merchant
-from app.schemas.merchant import MerchantCreate, MerchantResponse
+from app.schemas.merchant import MerchantCreate, MerchantResponse, MerchantUpdate
 from app.schemas.auth import TokenResponse
 from app.services.otp_service import is_otp_verified
 
@@ -47,4 +47,24 @@ def register_merchant(merchant: MerchantCreate, db: Session = Depends(get_db)):
 @router.get("/me", response_model=MerchantResponse)
 def get_my_profile(current_merchant: Merchant = Depends(get_current_merchant)):
     """Get current authenticated merchant profile (protected endpoint)"""
+    return MerchantResponse.model_validate(current_merchant)
+
+
+@router.put("/me", response_model=MerchantResponse)
+def update_my_profile(
+    merchant_update: MerchantUpdate,
+    current_merchant: Merchant = Depends(get_current_merchant),
+    db: Session = Depends(get_db)
+):
+    """Update current authenticated merchant profile (protected endpoint)"""
+    # Get only the fields that were provided (not None)
+    update_data = merchant_update.model_dump(exclude_unset=True)
+    
+    # Update the merchant with provided fields
+    for field, value in update_data.items():
+        setattr(current_merchant, field, value)
+    
+    db.commit()
+    db.refresh(current_merchant)
+    
     return MerchantResponse.model_validate(current_merchant)
