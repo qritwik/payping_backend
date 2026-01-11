@@ -50,7 +50,14 @@ def verify_otp_endpoint(request: OTPRequest, db: Session = Depends(get_db)):
     merchant = db.query(Merchant).filter(Merchant.phone == request.phone).first()
     
     if merchant:
-        # Merchant exists - login flow: return JWT token
+        # Check if merchant is active
+        if not merchant.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your account is inactive. Please contact support."
+            )
+        
+        # Merchant exists and is active - login flow: return JWT token
         access_token = create_access_token(data={"sub": request.phone})
         return VerifyOTPResponse(
             message="OTP verified successfully",

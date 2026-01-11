@@ -33,7 +33,8 @@ class MerchantResponse(BaseModel):
     company_logo_s3_url: Optional[str]
     upi_id: Optional[str]
     upi_qr_s3_url: Optional[str]
-    status: str
+    is_active: bool
+    plan: str
     created_at: datetime
 
     class Config:

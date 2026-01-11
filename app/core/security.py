@@ -65,5 +65,13 @@ def get_current_merchant(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    # Check if merchant is active
+    if not merchant.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is inactive. Please contact support.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
     return merchant
 

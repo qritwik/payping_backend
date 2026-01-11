@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS merchants (
   upi_id               VARCHAR(100),
   upi_qr_s3_url        TEXT,
 
-  status               VARCHAR(20) DEFAULT 'TRIAL' CHECK (status IN ('TRIAL', 'ACTIVE', 'SUSPENDED')),
+  is_active            BOOLEAN DEFAULT TRUE NOT NULL,
+  plan                 VARCHAR(20) DEFAULT 'trial' NOT NULL CHECK (plan IN ('trial', 'starter', 'pro')),
   created_at           TIMESTAMP DEFAULT NOW()
 );
 
@@ -146,19 +147,3 @@ CREATE TABLE IF NOT EXISTS payment_confirmations (
 CREATE INDEX IF NOT EXISTS idx_payment_confirmations_invoice_id ON payment_confirmations(invoice_id);
 CREATE INDEX IF NOT EXISTS idx_payment_confirmations_merchant_id ON payment_confirmations(merchant_id);
 CREATE INDEX IF NOT EXISTS idx_payment_confirmations_status ON payment_confirmations(status);
-
--- ---------- USAGE TRACKING ----------
-CREATE TABLE IF NOT EXISTS usage_tracking (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  merchant_id UUID REFERENCES merchants(id) ON DELETE CASCADE,
-
-  month VARCHAR(7) NOT NULL, -- YYYY-MM
-
-  invoices_created INT DEFAULT 0,
-  reminders_sent INT DEFAULT 0,
-
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW(),
-
-  UNIQUE (merchant_id, month)
-);

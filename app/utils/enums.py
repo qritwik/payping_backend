@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class MerchantStatus(str, Enum):
-    TRIAL = "TRIAL"
-    ACTIVE = "ACTIVE"
-    SUSPENDED = "SUSPENDED"
+class MerchantPlan(str, Enum):
+    TRIAL = "trial"
+    STARTER = "starter"
+    PRO = "pro"

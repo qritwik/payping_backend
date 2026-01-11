@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, TIMESTAMP, CheckConstraint
+from sqlalchemy import Column, String, Text, TIMESTAMP, CheckConstraint, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -21,13 +21,14 @@ class Merchant(Base):
     company_logo_s3_url = Column(Text)
     upi_id = Column(String(100))
     upi_qr_s3_url = Column(Text)
-    status = Column(String(20), default='TRIAL')
+    is_active = Column(Boolean, default=True, nullable=False)
+    plan = Column(String(20), default='trial', nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     __table_args__ = (
         CheckConstraint(
-            "status IN ('TRIAL', 'ACTIVE', 'SUSPENDED')",
-            name='merchants_status_check'
+            "plan IN ('trial', 'starter', 'pro')",
+            name='merchants_plan_check'
         ),
     )
 
