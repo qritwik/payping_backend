@@ -10,6 +10,11 @@ from app.schemas.auth import (
     LoginResponse,
     TokenResponse,
 )
+from app.schemas.customer import (
+    CustomerCreate,
+    CustomerUpdate,
+    CustomerResponse,
+)
 
 __all__ = [
     "MerchantCreate",
@@ -20,5 +25,8 @@ __all__ = [
     "VerifyOTPResponse",
     "LoginResponse",
     "TokenResponse",
+    "CustomerCreate",
+    "CustomerUpdate",
+    "CustomerResponse",
 ]
 
