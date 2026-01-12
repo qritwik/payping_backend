@@ -37,3 +37,7 @@ class WhatsAppMessageStatus(str, Enum):
     READ = "READ"
     FAILED = "FAILED"
     RECEIVED = "RECEIVED"
+
+
+class RecurringInvoiceFrequency(str, Enum):
+    MONTHLY = "MONTHLY"

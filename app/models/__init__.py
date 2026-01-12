@@ -2,6 +2,7 @@ from app.models.merchant import Merchant
 from app.models.auth import OTP
 from app.models.customer import Customer
 from app.models.invoice import Invoice
+from app.models.recurring_invoice import RecurringInvoice
 from app.models.whatsapp_message import WhatsAppMessage
 
 __all__ = [
@@ -9,5 +10,6 @@ __all__ = [
     "OTP",
     "Customer",
     "Invoice",
+    "RecurringInvoice",
     "WhatsAppMessage",
 ]

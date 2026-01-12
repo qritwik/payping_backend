@@ -15,6 +15,18 @@ from app.schemas.customer import (
     CustomerUpdate,
     CustomerResponse,
 )
+from app.schemas.invoice import (
+    InvoiceCreate,
+    InvoiceUpdate,
+    InvoiceResponse,
+    InvoiceWithMessagesResponse,
+    WhatsAppMessageResponse,
+)
+from app.schemas.recurring_invoice import (
+    RecurringInvoiceCreate,
+    RecurringInvoiceUpdate,
+    RecurringInvoiceResponse,
+)
 
 __all__ = [
     "MerchantCreate",
@@ -28,5 +40,13 @@ __all__ = [
     "CustomerCreate",
     "CustomerUpdate",
     "CustomerResponse",
+    "InvoiceCreate",
+    "InvoiceUpdate",
+    "InvoiceResponse",
+    "InvoiceWithMessagesResponse",
+    "WhatsAppMessageResponse",
+    "RecurringInvoiceCreate",
+    "RecurringInvoiceUpdate",
+    "RecurringInvoiceResponse",
 ]
 

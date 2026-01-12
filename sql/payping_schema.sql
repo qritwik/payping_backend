@@ -106,6 +106,10 @@ CREATE INDEX IF NOT EXISTS idx_invoices_merchant_id ON invoices(merchant_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_customer_id ON invoices(customer_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
 
+-- Add recurring_invoice_id to invoices table
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS recurring_invoice_id UUID REFERENCES recurring_invoices(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_invoices_recurring_invoice_id ON invoices(recurring_invoice_id);
+
 -- ---------- WHATSAPP MESSAGES ----------
 CREATE TABLE IF NOT EXISTS whatsapp_messages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -166,3 +170,33 @@ CREATE TABLE IF NOT EXISTS payment_confirmations (
 CREATE INDEX IF NOT EXISTS idx_payment_confirmations_invoice_id ON payment_confirmations(invoice_id);
 CREATE INDEX IF NOT EXISTS idx_payment_confirmations_merchant_id ON payment_confirmations(merchant_id);
 CREATE INDEX IF NOT EXISTS idx_payment_confirmations_status ON payment_confirmations(status);
+
+-- ---------- RECURRING INVOICES ----------
+CREATE TABLE IF NOT EXISTS recurring_invoices (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  merchant_id UUID REFERENCES merchants(id) ON DELETE CASCADE NOT NULL,
+  customer_id UUID REFERENCES customers(id) ON DELETE CASCADE NOT NULL,
+
+  invoice_number_prefix VARCHAR(50),
+  description TEXT,
+
+  amount DECIMAL(10,2) NOT NULL,
+  day_of_month INTEGER NOT NULL CHECK (day_of_month BETWEEN 1 AND 31),
+  due_date_offset INTEGER NOT NULL DEFAULT 7,
+  pause_reminder BOOLEAN DEFAULT FALSE NOT NULL,
+  
+  start_date DATE NOT NULL,
+  end_date DATE,
+  next_generation_date DATE NOT NULL,
+  
+  is_active BOOLEAN DEFAULT TRUE NOT NULL,
+  frequency VARCHAR(20) DEFAULT 'MONTHLY' NOT NULL CHECK (frequency IN ('MONTHLY')),
+  
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_recurring_invoices_merchant_id ON recurring_invoices(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_recurring_invoices_customer_id ON recurring_invoices(customer_id);
+CREATE INDEX IF NOT EXISTS idx_recurring_invoices_is_active ON recurring_invoices(is_active);
+CREATE INDEX IF NOT EXISTS idx_recurring_invoices_next_generation_date ON recurring_invoices(next_generation_date);

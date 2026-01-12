@@ -1,4 +1,14 @@
-from sqlalchemy import Column, String, Text, TIMESTAMP, ForeignKey, CheckConstraint, Boolean, Numeric, Date
+from sqlalchemy import (
+    Column,
+    String,
+    Text,
+    TIMESTAMP,
+    ForeignKey,
+    CheckConstraint,
+    Boolean,
+    Numeric,
+    Date,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -12,6 +22,11 @@ class Invoice(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     merchant_id = Column(UUID(as_uuid=True), ForeignKey("merchants.id", ondelete="CASCADE"), nullable=False)
     customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
+    recurring_invoice_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("recurring_invoices.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     
     invoice_number = Column(String(50))
     description = Column(Text)
@@ -38,4 +53,8 @@ class Invoice(Base):
     merchant = relationship("Merchant", backref="invoices")
     customer = relationship("Customer", backref="invoices")
     whatsapp_messages = relationship("WhatsAppMessage", backref="invoice", cascade="all, delete-orphan")
+    recurring_invoice = relationship(
+        "RecurringInvoice",
+        back_populates="invoices",
+    )
 
