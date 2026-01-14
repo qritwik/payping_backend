@@ -17,15 +17,10 @@ from app.schemas.invoice import (
     WhatsAppMessageResponse
 )
 from app.utils.enums import InvoiceStatus, WhatsAppDirection, WhatsAppMessageType, WhatsAppMessageStatus
+from app.tasks.whatsapp import send_whatsapp_message
 
 router = APIRouter()
 
-
-def send_whatsapp_task(message_id: UUID):
-    """Dummy Celery task for sending WhatsApp messages"""
-    # TODO: Implement actual Celery task
-    print(f"[DUMMY] Would send WhatsApp message with ID: {message_id}")
-    return True
 
 
 @router.post("", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
@@ -75,8 +70,8 @@ def create_invoice(
         db.add(whatsapp_message)
         db.flush()  # Flush to get message ID
         
-        # Trigger dummy Celery task
-        send_whatsapp_task(whatsapp_message.id)
+        # Trigger Celery task to send WhatsApp message
+        send_whatsapp_message.delay(customer.phone, whatsapp_message.message_text)
     
     db.commit()
     db.refresh(db_invoice)
@@ -295,8 +290,8 @@ def send_followup(
     db.add(whatsapp_message)
     db.flush()  # Flush to get message ID
     
-    # Trigger dummy Celery task
-    send_whatsapp_task(whatsapp_message.id)
+    # Trigger Celery task to send WhatsApp message
+    send_whatsapp_message.delay(invoice.customer.phone, whatsapp_message.message_text)
     
     db.commit()
     db.refresh(whatsapp_message)

@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 import calendar
 from typing import List
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.invoice import Invoice
 from app.models.recurring_invoice import RecurringInvoice
@@ -13,6 +13,7 @@ from app.utils.enums import (
     WhatsAppMessageStatus,
     WhatsAppMessageType,
 )
+from app.tasks.whatsapp import send_whatsapp_message
 
 
 def _last_day_of_month(year: int, month: int) -> int:
@@ -87,6 +88,7 @@ def generate_invoices_from_templates(db: Session) -> List[Invoice]:
 
     templates: List[RecurringInvoice] = (
         db.query(RecurringInvoice)
+        .options(joinedload(RecurringInvoice.customer))
         .filter(
             RecurringInvoice.is_active.is_(True),
             RecurringInvoice.next_generation_date <= today,
@@ -140,6 +142,10 @@ def generate_invoices_from_templates(db: Session) -> List[Invoice]:
                 message_text=message_text,
             )
             db.add(whatsapp_message)
+            db.flush()  # Flush to ensure whatsapp_message is available
+            
+            # Trigger Celery task to send WhatsApp message
+            send_whatsapp_message.delay(template.customer.phone, whatsapp_message.message_text)
 
         # Update next_generation_date
         next_date = calculate_next_generation_date(
