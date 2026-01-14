@@ -20,6 +20,7 @@ from app.schemas.invoice import (
     InvoiceUpdate,
     InvoiceResponse,
     InvoiceWithMessagesResponse,
+    InvoiceWithMerchantResponse,
     WhatsAppMessageResponse,
 )
 from app.schemas.recurring_invoice import (
@@ -44,6 +45,7 @@ __all__ = [
     "InvoiceUpdate",
     "InvoiceResponse",
     "InvoiceWithMessagesResponse",
+    "InvoiceWithMerchantResponse",
     "WhatsAppMessageResponse",
     "RecurringInvoiceCreate",
     "RecurringInvoiceUpdate",

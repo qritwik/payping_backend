@@ -14,8 +14,10 @@ from app.schemas.invoice import (
     InvoiceUpdate,
     InvoiceResponse,
     InvoiceWithMessagesResponse,
+    InvoiceWithMerchantResponse,
     WhatsAppMessageResponse
 )
+from app.schemas.merchant import MerchantResponse
 from app.utils.enums import InvoiceStatus, WhatsAppDirection, WhatsAppMessageType, WhatsAppMessageStatus
 from app.tasks.whatsapp import send_whatsapp_message
 
@@ -363,4 +365,37 @@ def unpause_reminder(
     db.refresh(invoice)
     
     return InvoiceResponse.model_validate(invoice)
+
+
+@router.get("/public/{invoice_id}", response_model=InvoiceWithMerchantResponse)
+def get_invoice_with_merchant_public(
+    invoice_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """Get invoice and merchant details by invoice ID (Public endpoint - no authentication required)"""
+    # Query invoice with merchant relationship loaded (public access)
+    invoice = db.query(Invoice).filter(
+        Invoice.id == invoice_id,
+        Invoice.deleted_at.is_(None)  # Not soft deleted
+    ).first()
+    
+    if not invoice:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invoice not found"
+        )
+    
+    # Access merchant through relationship
+    merchant = invoice.merchant
+    
+    if not merchant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Merchant not found for this invoice"
+        )
+    
+    return InvoiceWithMerchantResponse(
+        invoice=InvoiceResponse.model_validate(invoice),
+        merchant=MerchantResponse.model_validate(merchant)
+    )
 

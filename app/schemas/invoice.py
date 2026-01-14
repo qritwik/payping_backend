@@ -62,3 +62,16 @@ class WhatsAppMessageResponse(BaseModel):
 class InvoiceWithMessagesResponse(InvoiceResponse):
     whatsapp_messages: Optional[List[WhatsAppMessageResponse]] = None
 
+
+class InvoiceWithMerchantResponse(BaseModel):
+    invoice: InvoiceResponse
+    merchant: "MerchantResponse"
+
+    class Config:
+        from_attributes = True
+
+
+# Resolve forward reference
+from app.schemas.merchant import MerchantResponse
+InvoiceWithMerchantResponse.model_rebuild()
+
