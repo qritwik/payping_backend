@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "PayPing API"
     PROJECT_VERSION: str = "1.0.0"
     
+    # Supabase
+    SUPABASE_ACCESS_KEY: str
+    SUPABASE_SECRET_KEY: str
+    
+    # S3 Storage
+    S3_ENDPOINT: str
+    S3_REGION: str
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
