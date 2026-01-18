@@ -30,6 +30,7 @@ class CustomerResponse(BaseModel):
     address: Optional[str]
     employment_type: Optional[str]
     created_at: datetime
+    total_pending_amount: float = 0.0
 
     class Config:
         from_attributes = True

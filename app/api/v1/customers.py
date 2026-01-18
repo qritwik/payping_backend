@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List
 from uuid import UUID
 from app.core.database import get_db
@@ -9,6 +10,7 @@ from app.models.customer import Customer
 from app.models.invoice import Invoice
 from app.schemas.customer import CustomerCreate, CustomerResponse, CustomerUpdate
 from app.schemas.invoice import InvoiceResponse
+from app.utils.enums import InvoiceStatus
 
 router = APIRouter()
 
@@ -28,7 +30,11 @@ def create_customer(
     db.commit()
     db.refresh(db_customer)
     
-    return CustomerResponse.model_validate(db_customer)
+    # New customers have no invoices, so amount is 0.0
+    customer_dict = CustomerResponse.model_validate(db_customer).model_dump()
+    customer_dict["total_pending_amount"] = 0.0
+    
+    return CustomerResponse(**customer_dict)
 
 
 @router.get("", response_model=List[CustomerResponse])
@@ -36,12 +42,26 @@ def get_all_customers(
     current_merchant: Merchant = Depends(get_current_merchant),
     db: Session = Depends(get_db)
 ):
-    """Get all customers for the authenticated merchant"""
+    """Get all customers for the authenticated merchant with total pending amount (unpaid invoices only)"""
     customers = db.query(Customer).filter(
         Customer.merchant_id == current_merchant.id
     ).all()
     
-    return [CustomerResponse.model_validate(customer) for customer in customers]
+    result = []
+    for customer in customers:
+        # Calculate total pending amount (sum of all UNPAID invoices only)
+        total_pending = db.query(func.coalesce(func.sum(Invoice.amount), 0)).filter(
+            Invoice.customer_id == customer.id,
+            Invoice.merchant_id == current_merchant.id,
+            Invoice.status == InvoiceStatus.UNPAID.value,
+            Invoice.deleted_at.is_(None)
+        ).scalar() or 0.0
+        
+        customer_dict = CustomerResponse.model_validate(customer).model_dump()
+        customer_dict["total_pending_amount"] = float(total_pending)
+        result.append(CustomerResponse(**customer_dict))
+    
+    return result
 
 
 @router.get("/{customer_id}", response_model=CustomerResponse)
@@ -50,7 +70,7 @@ def get_customer_by_id(
     current_merchant: Merchant = Depends(get_current_merchant),
     db: Session = Depends(get_db)
 ):
-    """Get a specific customer by ID for the authenticated merchant"""
+    """Get a specific customer by ID for the authenticated merchant with total pending amount (unpaid invoices only)"""
     customer = db.query(Customer).filter(
         Customer.id == customer_id,
         Customer.merchant_id == current_merchant.id
@@ -62,7 +82,18 @@ def get_customer_by_id(
             detail="Customer not found"
         )
     
-    return CustomerResponse.model_validate(customer)
+    # Calculate total pending amount (sum of all UNPAID invoices only)
+    total_pending = db.query(func.coalesce(func.sum(Invoice.amount), 0)).filter(
+        Invoice.customer_id == customer_id,
+        Invoice.merchant_id == current_merchant.id,
+        Invoice.status == InvoiceStatus.UNPAID.value,
+        Invoice.deleted_at.is_(None)
+    ).scalar() or 0.0
+    
+    customer_dict = CustomerResponse.model_validate(customer).model_dump()
+    customer_dict["total_pending_amount"] = float(total_pending)
+    
+    return CustomerResponse(**customer_dict)
 
 
 @router.put("/{customer_id}", response_model=CustomerResponse)
@@ -94,7 +125,18 @@ def update_customer(
     db.commit()
     db.refresh(customer)
     
-    return CustomerResponse.model_validate(customer)
+    # Calculate total pending amount (sum of all UNPAID invoices only)
+    total_pending = db.query(func.coalesce(func.sum(Invoice.amount), 0)).filter(
+        Invoice.customer_id == customer_id,
+        Invoice.merchant_id == current_merchant.id,
+        Invoice.status == InvoiceStatus.UNPAID.value,
+        Invoice.deleted_at.is_(None)
+    ).scalar() or 0.0
+    
+    customer_dict = CustomerResponse.model_validate(customer).model_dump()
+    customer_dict["total_pending_amount"] = float(total_pending)
+    
+    return CustomerResponse(**customer_dict)
 
 
 @router.delete("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
