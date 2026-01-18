@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, merchants, customers, invoices, recurring_invoices
+from app.api.v1 import auth, merchants, customers, invoices, recurring_invoices, payment_confirmations
 
 api_router = APIRouter()
 
@@ -11,5 +11,10 @@ api_router.include_router(
     recurring_invoices.router,
     prefix="/recurring-invoices",
     tags=["recurring-invoices"],
+)
+api_router.include_router(
+    payment_confirmations.router,
+    prefix="/payment-confirmations",
+    tags=["payment-confirmations"],
 )
 

@@ -29,6 +29,10 @@ from app.schemas.recurring_invoice import (
     RecurringInvoiceUpdate,
     RecurringInvoiceResponse,
 )
+from app.schemas.payment_confirmation import (
+    PaymentConfirmationResponse,
+    PaymentConfirmationListResponse,
+)
 
 __all__ = [
     "MerchantCreate",
@@ -52,5 +56,7 @@ __all__ = [
     "RecurringInvoiceCreate",
     "RecurringInvoiceUpdate",
     "RecurringInvoiceResponse",
+    "PaymentConfirmationResponse",
+    "PaymentConfirmationListResponse",
 ]
 
