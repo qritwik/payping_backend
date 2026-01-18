@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from uuid import UUID
 from datetime import date, datetime
@@ -149,10 +149,17 @@ def get_all_invoices(
     if end_date:
         query = query.filter(Invoice.created_at <= datetime.combine(end_date, datetime.max.time()))
     
-    # Apply pagination
-    invoices = query.order_by(Invoice.created_at.desc()).offset(skip).limit(limit).all()
+    # Apply pagination and eager load customer relationship
+    invoices = query.options(joinedload(Invoice.customer)).order_by(Invoice.created_at.desc()).offset(skip).limit(limit).all()
     
-    return [InvoiceResponse.model_validate(invoice) for invoice in invoices]
+    # Build response with customer name
+    result = []
+    for invoice in invoices:
+        invoice_dict = InvoiceResponse.model_validate(invoice).model_dump()
+        invoice_dict["customer_name"] = invoice.customer.name if invoice.customer else None
+        result.append(InvoiceResponse(**invoice_dict))
+    
+    return result
 
 
 @router.get("/{invoice_id}", response_model=InvoiceWithMessagesResponse)
@@ -163,7 +170,7 @@ def get_invoice_by_id(
     db: Session = Depends(get_db)
 ):
     """Get a specific invoice by ID, optionally with WhatsApp messages"""
-    invoice = db.query(Invoice).filter(
+    invoice = db.query(Invoice).options(joinedload(Invoice.customer)).filter(
         Invoice.id == invoice_id,
         Invoice.merchant_id == current_merchant.id,
         Invoice.deleted_at.is_(None)  # Not soft deleted
@@ -175,7 +182,10 @@ def get_invoice_by_id(
             detail="Invoice not found"
         )
     
-    response_data = InvoiceResponse.model_validate(invoice).model_dump()
+    # Build response with customer name
+    invoice_dict = InvoiceResponse.model_validate(invoice).model_dump()
+    invoice_dict["customer_name"] = invoice.customer.name if invoice.customer else None
+    response_data = invoice_dict
     
     # Optionally include WhatsApp messages
     if include_messages:

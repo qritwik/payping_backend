@@ -26,6 +26,7 @@ class InvoiceResponse(BaseModel):
     id: UUID
     merchant_id: UUID
     customer_id: UUID
+    customer_name: Optional[str] = None
     recurring_invoice_id: Optional[UUID] = None
     invoice_number: Optional[str]
     description: Optional[str]
