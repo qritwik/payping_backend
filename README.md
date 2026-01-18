@@ -138,33 +138,117 @@ Once the server is running, visit:
 - **Swagger UI:** http://localhost:8000/docs
 - **ReDoc:** http://localhost:8000/redoc
 
-### Main Endpoints
+### Authentication Endpoints
 
-- **Authentication:** `/api/v1/auth/`
-  - `POST /send-otp` - Send OTP to phone number
-  - `POST /verify-otp` - Verify OTP and get access token
+**Base Path:** `/api/v1/auth/`
 
-- **Merchants:** `/api/v1/merchants/`
-  - `POST /register` - Register a new merchant
-  - `GET /me` - Get current merchant profile (authenticated)
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/send-otp` | Send OTP to phone number | No |
+| `POST` | `/verify-otp` | Verify OTP and get access token (if merchant exists) | No |
 
-- **Customers:** `/api/v1/customers/`
-  - `POST /` - Create a customer
-  - `GET /` - List customers
-  - `GET /{id}` - Get customer details
+**Note:** For detailed authentication flow, see [docs/AUTHENTICATION_FLOW.md](docs/AUTHENTICATION_FLOW.md)
 
-- **Invoices:** `/api/v1/invoices/`
-  - `POST /` - Create an invoice
-  - `GET /` - List invoices
-  - `GET /{id}` - Get invoice details
-  - `PUT /{id}` - Update invoice
+### Merchant Endpoints
 
-- **Recurring Invoices:** `/api/v1/recurring-invoices/`
-  - `POST /` - Create recurring invoice template
-  - `GET /` - List recurring invoices
-  - `GET /{id}` - Get recurring invoice details
+**Base Path:** `/api/v1/merchants/`
 
-For detailed authentication flow, see [docs/AUTHENTICATION_FLOW.md](docs/AUTHENTICATION_FLOW.md)
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/register` | Register a new merchant (requires OTP verification) | No |
+| `GET` | `/me` | Get current merchant profile | Yes |
+| `PUT` | `/me` | Update current merchant profile | Yes |
+| `GET` | `/dashboard` | Get dashboard statistics (outstanding, paid this month, unpaid invoices, pending confirmations) | Yes |
+
+### Customer Endpoints
+
+**Base Path:** `/api/v1/customers/`
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/` | Create a new customer | Yes |
+| `GET` | `/` | List all customers with total pending amount (unpaid invoices) | Yes |
+| `GET` | `/{customer_id}` | Get customer details with total pending amount | Yes |
+| `PUT` | `/{customer_id}` | Update customer details | Yes |
+| `DELETE` | `/{customer_id}` | Delete a customer | Yes |
+| `GET` | `/{customer_id}/invoices` | Get all invoices for a specific customer | Yes |
+
+**Response Fields:**
+- All customer endpoints include `total_pending_amount` - sum of all unpaid invoices for the customer
+
+### Invoice Endpoints
+
+**Base Path:** `/api/v1/invoices/`
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/` | Create a new invoice (sends WhatsApp notification if pause_reminder is false) | Yes |
+| `GET` | `/` | List invoices with filters (status, customer_id, start_date, end_date) and pagination | Yes |
+| `GET` | `/{invoice_id}` | Get invoice details (optionally include WhatsApp messages via `?include_messages=true`) | Yes |
+| `PUT` | `/{invoice_id}` | Update invoice details (only if not PAID) | Yes |
+| `DELETE` | `/{invoice_id}` | Soft delete an invoice (only if UNPAID) | Yes |
+| `POST` | `/{invoice_id}/mark-paid` | Mark an invoice as paid | Yes |
+| `POST` | `/{invoice_id}/send-followup` | Send a manual follow-up WhatsApp message for unpaid invoice | Yes |
+| `POST` | `/{invoice_id}/pause-reminder` | Pause reminders for an invoice | Yes |
+| `POST` | `/{invoice_id}/unpause-reminder` | Unpause reminders for an invoice | Yes |
+| `GET` | `/{invoice_id}/whatsapp-messages` | Get all WhatsApp messages for a specific invoice | Yes |
+| `GET` | `/public/{invoice_id}` | Get invoice and merchant details (public endpoint, no auth) | No |
+
+**Query Parameters for GET `/`:**
+- `status` - Filter by status (UNPAID, PAID)
+- `customer_id` - Filter by customer UUID
+- `start_date` - Filter invoices created from this date (YYYY-MM-DD)
+- `end_date` - Filter invoices created until this date (YYYY-MM-DD)
+- `skip` - Pagination offset (default: 0)
+- `limit` - Pagination limit (default: 100, max: 1000)
+
+### Recurring Invoice Endpoints
+
+**Base Path:** `/api/v1/recurring-invoices/`
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/` | Create a new recurring invoice template | Yes |
+| `GET` | `/` | List recurring invoice templates with filters (is_active, customer_id, start_date, end_date) and pagination | Yes |
+| `GET` | `/{template_id}` | Get a specific recurring invoice template | Yes |
+| `PUT` | `/{template_id}` | Update a recurring invoice template | Yes |
+| `DELETE` | `/{template_id}` | Cancel/delete a recurring invoice template (sets is_active=false) | Yes |
+| `POST` | `/{template_id}/pause` | Pause a recurring invoice template | Yes |
+| `POST` | `/{template_id}/resume` | Resume a recurring invoice template | Yes |
+
+**Query Parameters for GET `/`:**
+- `is_active` - Filter by active status (true/false)
+- `customer_id` - Filter by customer UUID
+- `start_date` - Filter templates starting from this date
+- `end_date` - Filter templates starting until this date
+- `skip` - Pagination offset (default: 0)
+- `limit` - Pagination limit (default: 100, max: 1000)
+
+### Payment Confirmation Endpoints
+
+**Base Path:** `/api/v1/payment-confirmations/`
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `GET` | `/` | List payment confirmations with filters (status) and pagination | Yes |
+| `GET` | `/{confirmation_id}` | Get a specific payment confirmation by ID | Yes |
+| `POST` | `/{confirmation_id}/approve` | Approve a payment confirmation and mark associated invoice as paid | Yes |
+| `POST` | `/{confirmation_id}/decline` | Decline a payment confirmation | Yes |
+
+**Query Parameters for GET `/`:**
+- `status` - Filter by status (pending, approved, rejected)
+- `skip` - Pagination offset (default: 0)
+- `limit` - Pagination limit (default: 100, max: 1000)
+
+### Authentication
+
+Most endpoints require authentication via JWT Bearer token. Include the token in the Authorization header:
+
+```
+Authorization: Bearer <your-access-token>
+```
+
+Tokens are obtained through the `/api/v1/auth/verify-otp` endpoint after OTP verification.
 
 ## Configuration
 
