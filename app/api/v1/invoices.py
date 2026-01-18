@@ -201,6 +201,34 @@ def get_invoice_by_id(
     return InvoiceWithMessagesResponse(**response_data)
 
 
+@router.get("/{invoice_id}/whatsapp-messages", response_model=List[WhatsAppMessageResponse])
+def get_invoice_whatsapp_messages(
+    invoice_id: UUID,
+    current_merchant: Merchant = Depends(get_current_merchant),
+    db: Session = Depends(get_db)
+):
+    """Get all WhatsApp messages for a specific invoice"""
+    # Verify invoice exists and belongs to merchant
+    invoice = db.query(Invoice).filter(
+        Invoice.id == invoice_id,
+        Invoice.merchant_id == current_merchant.id,
+        Invoice.deleted_at.is_(None)  # Not soft deleted
+    ).first()
+    
+    if not invoice:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invoice not found"
+        )
+    
+    # Get all WhatsApp messages for this invoice, ordered by creation time (oldest first)
+    messages = db.query(WhatsAppMessage).filter(
+        WhatsAppMessage.invoice_id == invoice_id
+    ).order_by(WhatsAppMessage.created_at.asc()).all()
+    
+    return [WhatsAppMessageResponse.model_validate(msg) for msg in messages]
+
+
 @router.delete("/{invoice_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_invoice(
     invoice_id: UUID,
