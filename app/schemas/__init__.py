@@ -1,6 +1,7 @@
 from app.schemas.merchant import (
     MerchantCreate,
     MerchantResponse,
+    DashboardResponse,
 )
 from app.schemas.auth import (
     PhoneRequest,
@@ -32,6 +33,7 @@ from app.schemas.recurring_invoice import (
 __all__ = [
     "MerchantCreate",
     "MerchantResponse",
+    "DashboardResponse",
     "PhoneRequest",
     "OTPRequest",
     "OTPResponse",

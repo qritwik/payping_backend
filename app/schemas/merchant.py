@@ -54,3 +54,10 @@ class MerchantResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+class DashboardResponse(BaseModel):
+    total_outstanding: float = Field(..., description="Total amount of unpaid invoices")
+    paid_this_month: float = Field(..., description="Total amount paid this month")
+    unpaid_invoices: int = Field(..., description="Count of unpaid invoices")
+    payment_confirmations_pending: int = Field(..., description="Count of pending payment confirmations")
+
