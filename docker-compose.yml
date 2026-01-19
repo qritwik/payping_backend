@@ -9,9 +9,18 @@ services:
       - "8000:8000"
     labels:
       - "traefik.enable=true"
+      # HTTP router (for ACME challenge and redirect)
+      - "traefik.http.routers.payping-api-http.rule=Host(`paypingai.com`) || Host(`www.paypingai.com`)"
+      - "traefik.http.routers.payping-api-http.entrypoints=web"
+      - "traefik.http.routers.payping-api-http.middlewares=redirect-to-https"
+      # HTTPS router
       - "traefik.http.routers.payping-api.rule=Host(`paypingai.com`) || Host(`www.paypingai.com`)"
-      - "traefik.http.routers.payping-api.entrypoints=web"
+      - "traefik.http.routers.payping-api.entrypoints=websecure"
+      - "traefik.http.routers.payping-api.tls.certresolver=myresolver"
       - "traefik.http.services.payping-api.loadbalancer.server.port=8000"
+      # Redirect middleware
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
     env_file:
       - .env
     depends_on:
@@ -36,8 +45,14 @@ services:
       - "5555:5555"
     labels:
       - "traefik.enable=true"
+      # HTTP router (for ACME challenge and redirect)
+      - "traefik.http.routers.payping-flower-http.rule=Host(`flower.paypingai.com`)"
+      - "traefik.http.routers.payping-flower-http.entrypoints=web"
+      - "traefik.http.routers.payping-flower-http.middlewares=redirect-to-https"
+      # HTTPS router
       - "traefik.http.routers.payping-flower.rule=Host(`flower.paypingai.com`)"
-      - "traefik.http.routers.payping-flower.entrypoints=web"
+      - "traefik.http.routers.payping-flower.entrypoints=websecure"
+      - "traefik.http.routers.payping-flower.tls.certresolver=myresolver"
       - "traefik.http.services.payping-flower.loadbalancer.server.port=5555"
     env_file:
       - .env
@@ -80,11 +95,19 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Enable Let's Encrypt
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=qritwik@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
+      - "443:443"
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
     restart: unless-stopped
 
 
