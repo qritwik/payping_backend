@@ -24,14 +24,14 @@ def create_customer(
     """Create a new customer for the authenticated merchant"""
     db_customer = Customer(
         merchant_id=current_merchant.id,
-        **customer.model_dump()
+        **customer.model_dump(by_alias=False)
     )
     db.add(db_customer)
     db.commit()
     db.refresh(db_customer)
     
     # New customers have no invoices, so amount is 0.0
-    customer_dict = CustomerResponse.model_validate(db_customer).model_dump()
+    customer_dict = CustomerResponse.model_validate(db_customer).model_dump(by_alias=True)
     customer_dict["total_pending_amount"] = 0.0
     
     return CustomerResponse(**customer_dict)
@@ -57,7 +57,7 @@ def get_all_customers(
             Invoice.deleted_at.is_(None)
         ).scalar() or 0.0
         
-        customer_dict = CustomerResponse.model_validate(customer).model_dump()
+        customer_dict = CustomerResponse.model_validate(customer).model_dump(by_alias=True)
         customer_dict["total_pending_amount"] = float(total_pending)
         result.append(CustomerResponse(**customer_dict))
     
@@ -90,7 +90,7 @@ def get_customer_by_id(
         Invoice.deleted_at.is_(None)
     ).scalar() or 0.0
     
-    customer_dict = CustomerResponse.model_validate(customer).model_dump()
+    customer_dict = CustomerResponse.model_validate(customer).model_dump(by_alias=True)
     customer_dict["total_pending_amount"] = float(total_pending)
     
     return CustomerResponse(**customer_dict)
@@ -116,7 +116,8 @@ def update_customer(
         )
     
     # Get only the fields that were provided (not None)
-    update_data = customer_update.model_dump(exclude_unset=True)
+    # Use by_alias=False to get Python attribute names (class_ instead of class)
+    update_data = customer_update.model_dump(exclude_unset=True, by_alias=False)
     
     # Update the customer with provided fields
     for field, value in update_data.items():
@@ -133,7 +134,7 @@ def update_customer(
         Invoice.deleted_at.is_(None)
     ).scalar() or 0.0
     
-    customer_dict = CustomerResponse.model_validate(customer).model_dump()
+    customer_dict = CustomerResponse.model_validate(customer).model_dump(by_alias=True)
     customer_dict["total_pending_amount"] = float(total_pending)
     
     return CustomerResponse(**customer_dict)
@@ -189,5 +190,15 @@ def get_customer_invoices(
         Invoice.deleted_at.is_(None)
     ).order_by(Invoice.created_at.desc()).all()
     
-    return [InvoiceResponse.model_validate(invoice) for invoice in invoices]
+    # Build response with customer data
+    result = []
+    for invoice in invoices:
+        invoice_dict = InvoiceResponse.model_validate(invoice).model_dump(by_alias=True)
+        invoice_dict["customer_name"] = customer.name
+        invoice_dict["class"] = customer.class_
+        invoice_dict["section"] = customer.section
+        invoice_dict["batch"] = customer.batch
+        result.append(InvoiceResponse(**invoice_dict))
+    
+    return result
 

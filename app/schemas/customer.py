@@ -11,6 +11,12 @@ class CustomerCreate(BaseModel):
     email: Optional[EmailStr] = None
     address: Optional[str] = None
     employment_type: Optional[EmploymentType] = None
+    class_: Optional[str] = Field(None, max_length=100, alias="class")
+    section: Optional[str] = Field(None, max_length=100)
+    batch: Optional[str] = Field(None, max_length=100)
+    
+    class Config:
+        populate_by_name = True
 
 
 class CustomerUpdate(BaseModel):
@@ -19,6 +25,12 @@ class CustomerUpdate(BaseModel):
     email: Optional[EmailStr] = None
     address: Optional[str] = None
     employment_type: Optional[EmploymentType] = None
+    class_: Optional[str] = Field(None, max_length=100, alias="class")
+    section: Optional[str] = Field(None, max_length=100)
+    batch: Optional[str] = Field(None, max_length=100)
+    
+    class Config:
+        populate_by_name = True
 
 
 class CustomerResponse(BaseModel):
@@ -29,9 +41,13 @@ class CustomerResponse(BaseModel):
     email: Optional[str]
     address: Optional[str]
     employment_type: Optional[str]
+    class_: Optional[str] = Field(None, alias="class")
+    section: Optional[str] = None
+    batch: Optional[str] = None
     created_at: datetime
     total_pending_amount: float = 0.0
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 

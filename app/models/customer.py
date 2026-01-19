@@ -17,6 +17,9 @@ class Customer(Base):
     email = Column(String(150))
     address = Column(Text)
     employment_type = Column(String(20))
+    class_ = Column(String(100), name="class")
+    section = Column(String(100))
+    batch = Column(String(100))
     
     created_at = Column(TIMESTAMP, server_default=func.now())
 

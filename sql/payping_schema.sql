@@ -74,6 +74,9 @@ CREATE TABLE IF NOT EXISTS customers (
   email VARCHAR(150),
   address TEXT,
   employment_type VARCHAR(20) CHECK (employment_type IN ('SALARIED', 'SELF_EMPLOYED', 'BUSINESS', 'UNEMPLOYED')),
+  class VARCHAR(100),
+  section VARCHAR(100),
+  batch VARCHAR(100),
 
   created_at TIMESTAMP DEFAULT NOW()
 );
@@ -105,10 +108,6 @@ CREATE TABLE IF NOT EXISTS invoices (
 CREATE INDEX IF NOT EXISTS idx_invoices_merchant_id ON invoices(merchant_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_customer_id ON invoices(customer_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
-
--- Add recurring_invoice_id to invoices table
-ALTER TABLE invoices ADD COLUMN IF NOT EXISTS recurring_invoice_id UUID REFERENCES recurring_invoices(id) ON DELETE SET NULL;
-CREATE INDEX IF NOT EXISTS idx_invoices_recurring_invoice_id ON invoices(recurring_invoice_id);
 
 -- ---------- WHATSAPP MESSAGES ----------
 CREATE TABLE IF NOT EXISTS whatsapp_messages (
@@ -200,3 +199,7 @@ CREATE INDEX IF NOT EXISTS idx_recurring_invoices_merchant_id ON recurring_invoi
 CREATE INDEX IF NOT EXISTS idx_recurring_invoices_customer_id ON recurring_invoices(customer_id);
 CREATE INDEX IF NOT EXISTS idx_recurring_invoices_is_active ON recurring_invoices(is_active);
 CREATE INDEX IF NOT EXISTS idx_recurring_invoices_next_generation_date ON recurring_invoices(next_generation_date);
+
+-- Add recurring_invoice_id to invoices table (after recurring_invoices table is created)
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS recurring_invoice_id UUID REFERENCES recurring_invoices(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_invoices_recurring_invoice_id ON invoices(recurring_invoice_id);

@@ -27,6 +27,9 @@ class InvoiceResponse(BaseModel):
     merchant_id: UUID
     customer_id: UUID
     customer_name: Optional[str] = None
+    class_: Optional[str] = Field(None, alias="class")
+    section: Optional[str] = None
+    batch: Optional[str] = None
     recurring_invoice_id: Optional[UUID] = None
     invoice_number: Optional[str]
     description: Optional[str]
@@ -39,6 +42,7 @@ class InvoiceResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class WhatsAppMessageResponse(BaseModel):

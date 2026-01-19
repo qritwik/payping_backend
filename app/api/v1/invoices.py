@@ -78,7 +78,13 @@ def create_invoice(
     db.commit()
     db.refresh(db_invoice)
     
-    return InvoiceResponse.model_validate(db_invoice)
+    # Build response with customer data
+    invoice_dict = InvoiceResponse.model_validate(db_invoice).model_dump(by_alias=True)
+    invoice_dict["customer_name"] = customer.name
+    invoice_dict["class"] = customer.class_
+    invoice_dict["section"] = customer.section
+    invoice_dict["batch"] = customer.batch
+    return InvoiceResponse(**invoice_dict)
 
 
 @router.put("/{invoice_id}", response_model=InvoiceResponse)
@@ -116,7 +122,20 @@ def update_invoice(
     db.commit()
     db.refresh(invoice)
     
-    return InvoiceResponse.model_validate(invoice)
+    # Load customer and build response with customer data
+    customer = db.query(Customer).filter(Customer.id == invoice.customer_id).first()
+    invoice_dict = InvoiceResponse.model_validate(invoice).model_dump(by_alias=True)
+    if customer:
+        invoice_dict["customer_name"] = customer.name
+        invoice_dict["class"] = customer.class_ if hasattr(customer, 'class_') else None
+        invoice_dict["section"] = customer.section
+        invoice_dict["batch"] = customer.batch
+    else:
+        invoice_dict["customer_name"] = None
+        invoice_dict["class"] = None
+        invoice_dict["section"] = None
+        invoice_dict["batch"] = None
+    return InvoiceResponse(**invoice_dict)
 
 
 @router.get("", response_model=List[InvoiceResponse])
@@ -152,11 +171,20 @@ def get_all_invoices(
     # Apply pagination and eager load customer relationship
     invoices = query.options(joinedload(Invoice.customer)).order_by(Invoice.created_at.desc()).offset(skip).limit(limit).all()
     
-    # Build response with customer name
+    # Build response with customer data
     result = []
     for invoice in invoices:
-        invoice_dict = InvoiceResponse.model_validate(invoice).model_dump()
-        invoice_dict["customer_name"] = invoice.customer.name if invoice.customer else None
+        invoice_dict = InvoiceResponse.model_validate(invoice).model_dump(by_alias=True)
+        if invoice.customer:
+            invoice_dict["customer_name"] = invoice.customer.name
+            invoice_dict["class"] = invoice.customer.class_
+            invoice_dict["section"] = invoice.customer.section
+            invoice_dict["batch"] = invoice.customer.batch
+        else:
+            invoice_dict["customer_name"] = None
+            invoice_dict["class"] = None
+            invoice_dict["section"] = None
+            invoice_dict["batch"] = None
         result.append(InvoiceResponse(**invoice_dict))
     
     return result
@@ -182,9 +210,18 @@ def get_invoice_by_id(
             detail="Invoice not found"
         )
     
-    # Build response with customer name
-    invoice_dict = InvoiceResponse.model_validate(invoice).model_dump()
-    invoice_dict["customer_name"] = invoice.customer.name if invoice.customer else None
+    # Build response with customer data
+    invoice_dict = InvoiceResponse.model_validate(invoice).model_dump(by_alias=True)
+    if invoice.customer:
+        invoice_dict["customer_name"] = invoice.customer.name
+        invoice_dict["class"] = invoice.customer.class_ if hasattr(invoice.customer, 'class_') else None
+        invoice_dict["section"] = invoice.customer.section
+        invoice_dict["batch"] = invoice.customer.batch
+    else:
+        invoice_dict["customer_name"] = None
+        invoice_dict["class"] = None
+        invoice_dict["section"] = None
+        invoice_dict["batch"] = None
     response_data = invoice_dict
     
     # Optionally include WhatsApp messages
@@ -288,7 +325,20 @@ def mark_invoice_as_paid(
     db.commit()
     db.refresh(invoice)
     
-    return InvoiceResponse.model_validate(invoice)
+    # Load customer and build response with customer data
+    customer = db.query(Customer).filter(Customer.id == invoice.customer_id).first()
+    invoice_dict = InvoiceResponse.model_validate(invoice).model_dump(by_alias=True)
+    if customer:
+        invoice_dict["customer_name"] = customer.name
+        invoice_dict["class"] = customer.class_ if hasattr(customer, 'class_') else None
+        invoice_dict["section"] = customer.section
+        invoice_dict["batch"] = customer.batch
+    else:
+        invoice_dict["customer_name"] = None
+        invoice_dict["class"] = None
+        invoice_dict["section"] = None
+        invoice_dict["batch"] = None
+    return InvoiceResponse(**invoice_dict)
 
 
 @router.post("/{invoice_id}/send-followup", response_model=WhatsAppMessageResponse, status_code=status.HTTP_201_CREATED)
@@ -369,7 +419,20 @@ def pause_reminder(
     db.commit()
     db.refresh(invoice)
     
-    return InvoiceResponse.model_validate(invoice)
+    # Load customer and build response with customer data
+    customer = db.query(Customer).filter(Customer.id == invoice.customer_id).first()
+    invoice_dict = InvoiceResponse.model_validate(invoice).model_dump(by_alias=True)
+    if customer:
+        invoice_dict["customer_name"] = customer.name
+        invoice_dict["class"] = customer.class_ if hasattr(customer, 'class_') else None
+        invoice_dict["section"] = customer.section
+        invoice_dict["batch"] = customer.batch
+    else:
+        invoice_dict["customer_name"] = None
+        invoice_dict["class"] = None
+        invoice_dict["section"] = None
+        invoice_dict["batch"] = None
+    return InvoiceResponse(**invoice_dict)
 
 
 @router.post("/{invoice_id}/unpause-reminder", response_model=InvoiceResponse)
@@ -402,7 +465,20 @@ def unpause_reminder(
     db.commit()
     db.refresh(invoice)
     
-    return InvoiceResponse.model_validate(invoice)
+    # Load customer and build response with customer data
+    customer = db.query(Customer).filter(Customer.id == invoice.customer_id).first()
+    invoice_dict = InvoiceResponse.model_validate(invoice).model_dump(by_alias=True)
+    if customer:
+        invoice_dict["customer_name"] = customer.name
+        invoice_dict["class"] = customer.class_ if hasattr(customer, 'class_') else None
+        invoice_dict["section"] = customer.section
+        invoice_dict["batch"] = customer.batch
+    else:
+        invoice_dict["customer_name"] = None
+        invoice_dict["class"] = None
+        invoice_dict["section"] = None
+        invoice_dict["batch"] = None
+    return InvoiceResponse(**invoice_dict)
 
 
 @router.get("/public/{invoice_id}", response_model=InvoiceWithMerchantResponse)
@@ -432,8 +508,30 @@ def get_invoice_with_merchant_public(
             detail="Merchant not found for this invoice"
         )
     
+    # Build invoice response with customer data
+    invoice_dict = InvoiceResponse.model_validate(invoice).model_dump(by_alias=True)
+    # Load customer if not already loaded
+    if invoice.customer:
+        invoice_dict["customer_name"] = invoice.customer.name
+        invoice_dict["class"] = invoice.customer.class_ if hasattr(invoice.customer, 'class_') else None
+        invoice_dict["section"] = invoice.customer.section
+        invoice_dict["batch"] = invoice.customer.batch
+    else:
+        # Load customer if not already loaded
+        customer = db.query(Customer).filter(Customer.id == invoice.customer_id).first()
+        if customer:
+            invoice_dict["customer_name"] = customer.name
+            invoice_dict["class"] = customer.class_
+            invoice_dict["section"] = customer.section
+            invoice_dict["batch"] = customer.batch
+        else:
+            invoice_dict["customer_name"] = None
+            invoice_dict["class"] = None
+            invoice_dict["section"] = None
+            invoice_dict["batch"] = None
+    
     return InvoiceWithMerchantResponse(
-        invoice=InvoiceResponse.model_validate(invoice),
+        invoice=InvoiceResponse(**invoice_dict),
         merchant=MerchantResponse.model_validate(merchant)
     )
 
