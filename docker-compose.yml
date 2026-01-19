@@ -17,6 +17,7 @@ services:
       - "traefik.http.routers.payping-api.rule=Host(`paypingai.com`) || Host(`www.paypingai.com`)"
       - "traefik.http.routers.payping-api.entrypoints=websecure"
       - "traefik.http.routers.payping-api.tls.certresolver=myresolver"
+      - "traefik.http.routers.payping-api.service=payping-api"
       - "traefik.http.services.payping-api.loadbalancer.server.port=8000"
       # Redirect middleware
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
