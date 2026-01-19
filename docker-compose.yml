@@ -9,19 +9,17 @@ services:
       - "8000:8000"
     labels:
       - "traefik.enable=true"
-      # HTTP router (for ACME challenge and redirect)
+      # HTTP router (for ACME challenge)
       - "traefik.http.routers.payping-api-http.rule=Host(`paypingai.com`) || Host(`www.paypingai.com`)"
       - "traefik.http.routers.payping-api-http.entrypoints=web"
-      - "traefik.http.routers.payping-api-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.payping-api-http.service=payping-api"
       # HTTPS router
       - "traefik.http.routers.payping-api.rule=Host(`paypingai.com`) || Host(`www.paypingai.com`)"
       - "traefik.http.routers.payping-api.entrypoints=websecure"
       - "traefik.http.routers.payping-api.tls.certresolver=myresolver"
       - "traefik.http.routers.payping-api.service=payping-api"
       - "traefik.http.services.payping-api.loadbalancer.server.port=8000"
-      # Redirect middleware
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+
     env_file:
       - .env
     depends_on:
@@ -46,10 +44,10 @@ services:
       - "5555:5555"
     labels:
       - "traefik.enable=true"
-      # HTTP router (for ACME challenge and redirect)
+      # HTTP router (for ACME challenge)
       - "traefik.http.routers.payping-flower-http.rule=Host(`flower.paypingai.com`)"
       - "traefik.http.routers.payping-flower-http.entrypoints=web"
-      - "traefik.http.routers.payping-flower-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.payping-flower-http.service=payping-flower"
       # HTTPS router
       - "traefik.http.routers.payping-flower.rule=Host(`flower.paypingai.com`)"
       - "traefik.http.routers.payping-flower.entrypoints=websecure"
